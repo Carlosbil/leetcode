@@ -11,28 +11,26 @@ The table holds all users. Each user has a unique users_id, and role is an ENUM 
 banned is an ENUM (category) type of ('Yes', 'No')
 """
 def trips_and_users(trips: pd.DataFrame, users: pd.DataFrame) -> pd.DataFrame:
-    # remove trips that are not .between('2013-10-01','2013-10-03')
-    trips = trips[trips['request_at'].between('2013-10-01','2013-10-03')]
-    # merge both dataframe saving employee, dept
-    trips_with_user_info = pd.merge(trips, users, left_on='client_id', right_on='users_id')
-    trips_with_driver_info = pd.merge(trips, users, left_on='driver_id', right_on='users_id')
+    # Filter trips for the specified date range
+    trips = trips[trips['request_at'].between('2013-10-01', '2013-10-03')]
 
-    # no banned trips
-    unbanned_trips = trips_with_user_info[trips_with_user_info['banned'] == 'No']
-    unbanned_trips_with_driver = trips_with_driver_info[trips_with_driver_info['banned'] == 'No']
+    # Merge the trips with user information for clients
+    trips_with_users = pd.merge(trips, users, left_on='client_id', right_on='users_id')
 
-    # no banned trips (merge unbaned trips with unbanned driver, only keep trips with unbanned driver)
-    unbanned_trips = pd.merge(unbanned_trips, unbanned_trips_with_driver, left_on='request_at', right_on='request_at')
+    # Merge the trips with user information for drivers
+    trips_with_users = pd.merge(trips_with_users, users, left_on='driver_id', right_on='users_id', suffixes=('_client', '_driver'))
 
-    # assumem that cancelled_by_driver and cancelled_by_client are the same
-    unbanned_trips['cancelled'] = unbanned_trips['status_x'] != 'completed'
+    # Filter out trips where either the client or the driver is banned
+    unbanned_trips = trips_with_users[(trips_with_users['banned_client'] == 'No') & (trips_with_users['banned_driver'] == 'No')]
 
-    # group by day and calculate the mean
-    daily_cancellation_rates = unbanned_trips.groupby('request_at')['cancelled'].agg(['mean']).reset_index()
+    # Mark trips as cancelled if their status is not 'completed'
+    unbanned_trips['cancelled'] = unbanned_trips['status'] != 'completed'
 
-    # rename columns
+    # Group by request date and calculate the mean cancellation rate
+    daily_cancellation_rates = unbanned_trips.groupby('request_at')['cancelled'].mean().reset_index()
+
+    # Rename columns and round the cancellation rate to two decimal places
     daily_cancellation_rates.columns = ['Day', 'Cancellation Rate']
     daily_cancellation_rates['Cancellation Rate'] = daily_cancellation_rates['Cancellation Rate'].round(2)
 
-    # if day is not 
     return daily_cancellation_rates
