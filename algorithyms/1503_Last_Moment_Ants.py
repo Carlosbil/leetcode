@@ -12,6 +12,8 @@ Space complexity:
 O(1)
 
 Code"""
+from typing import List
+
 class Solution:
     def getLastMoment(self, n: int, left: List[int], right: List[int]) -> int:
         max_left = max(left) if left else 0

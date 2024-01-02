@@ -15,6 +15,8 @@ O(n)
 O(n)
 # Code
 """
+from typing import List
+
 class Solution:
     def buildArray(self, target: List[int], n: int) -> List[str]:
         sol = []

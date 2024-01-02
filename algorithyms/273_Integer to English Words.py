@@ -49,5 +49,7 @@ class Solution:
         for i in range(len(self.thousands)):
             if num % 1000 != 0:
                 res = self.helper(num % 1000) + self.thousands[i] + ' ' + res
+            else:
+                break
             num //= 1000
         return res.strip()
